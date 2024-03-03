@@ -12,18 +12,17 @@ M.big_cursor_moved_callback = function()
   local current_win_width = vim.api.nvim_win_get_width(current_win_id)
   local current_win_col = vim.fn.wincol()
   local current_win_row = vim.fn.winline()
-  local _, current_buf_col = unpack(vim.api.nvim_win_get_cursor(0))
-  local col_diff = current_win_col - current_buf_col
+  local win_buf_offset = vim.fn.getwininfo(current_win_id)[1].textoff
 
   -- TODO: Make the shit code pretty.
   -- TODO: Smoothly decrease the hl_win width
   local hl_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_set_option_value("filetype", "hereeyeam", { buf = hl_buf })
+  vim.api.nvim_set_option_value("filetype", "HereEyeAm", { buf = hl_buf })
   local hl_win_id = vim.api.nvim_open_win(hl_buf, false, {
     relative = "win",
-    width = math.min(current_win_width - col_diff + 1, (current_buf_col + 2 ^ 5) - (current_buf_col - 2 ^ 5)),
+    width = math.min(current_win_width - win_buf_offset + 2, (current_win_col + 2 ^ 5) - (current_win_col - 2 ^ 5)),
     height = 1,
-    col = math.max(col_diff - 1, current_buf_col - 2 ^ 5 + col_diff - 1),
+    col = math.max(win_buf_offset, current_win_col - 2 ^ 5 - 1),
     row = current_win_row - 1,
     style = "minimal",
     focusable = false,
@@ -50,9 +49,9 @@ M.big_cursor_moved_callback = function()
 
       vim.api.nvim_win_set_config(hl_win_id, {
         relative = 'win',
-        width = math.min(current_win_width - col_diff + 1, (current_buf_col + 2 ^ (width_tier - cnt)) - (current_buf_col - 2 ^ (width_tier - cnt)) + 1),
+        width = math.min(current_win_width - win_buf_offset + 2, (current_win_col + 2 ^ (width_tier - cnt)) - (current_win_col - 2 ^ (width_tier - cnt)) + 1),
         height = 1,
-        col = math.max(col_diff - 1, current_buf_col - 2 ^ (width_tier - cnt) + col_diff - 1),
+        col = math.max(win_buf_offset, current_win_col - 2 ^ (width_tier - cnt) - 1),
         row = current_win_row - 1
       })
 

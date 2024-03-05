@@ -50,10 +50,12 @@ M.big_cursor_moved_callback = function()
     0,
     M.opts.interval_ms,
     vim.schedule_wrap(function()
-      local close = false
-      if elapsed_ms >= M.opts.total_ms then
-        close = true
+      -- Callback might be scheduled before timer is actually closed.
+      if not uv.is_active(timer) then
+        return
       end
+
+      local should_close = elapsed_ms >= M.opts.total_ms
 
       local width = get_width(vim.fn.round(M.opts.width / 2), M.opts.total_ms, elapsed_ms)
       local blend = get_blend(vim.fn.round(M.opts.base_blend), M.opts.total_ms, elapsed_ms)
@@ -74,9 +76,10 @@ M.big_cursor_moved_callback = function()
       vim.api.nvim_set_option_value("winblend", blend, { win = hl_win_id })
       vim.api.nvim_win_set_config(hl_win_id, hl_win_config)
 
-      if close then
-        pcall(vim.api.nvim_win_close, hl_win_id, true)
-        pcall(uv.timer_stop, timer)
+      if should_close then
+        vim.api.nvim_win_close(hl_win_id, true)
+        uv.timer_stop(timer)
+        uv.close(timer)
         return
       end
 

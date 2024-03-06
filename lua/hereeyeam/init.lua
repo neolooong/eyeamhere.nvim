@@ -6,10 +6,11 @@ local M = {}
 local default_opts = {
   min_jump = 10,
   width = 64,
-  base_blend = 30,
-  final_blend = 80,
   interval_ms = 15,
   total_ms = 350,
+  base_blend = 50,
+  end_blend = 80,
+  highlight = { link = "Normal" },
 }
 
 M.big_cursor_moved_callback = function()
@@ -30,8 +31,8 @@ M.big_cursor_moved_callback = function()
     return vim.fn.round(math.min(-math.log(elapsed_ms / total_ms, 10), 1) * width)
   end
 
-  local get_blend = function(base_blend, final_blend, total_ms, elapsed_ms)
-    local range = final_blend - base_blend
+  local get_blend = function(base_blend, end_blend, total_ms, elapsed_ms)
+    local range = end_blend - base_blend
     return base_blend + range - vim.fn.round(math.min(-math.log(elapsed_ms / total_ms, 10), 1) * range)
   end
 
@@ -60,7 +61,7 @@ M.big_cursor_moved_callback = function()
       local should_close = elapsed_ms >= M.opts.total_ms
 
       local width = get_width(vim.fn.round(M.opts.width / 2), M.opts.total_ms, elapsed_ms)
-      local blend = get_blend(M.opts.base_blend, M.opts.final_blend, M.opts.total_ms, elapsed_ms)
+      local blend = get_blend(M.opts.base_blend, M.opts.end_blend, M.opts.total_ms, elapsed_ms)
       local hl_win_config = get_hl_win_config(buf_leftmost, buf_rightmost, current_win_col, current_win_row, width)
 
       if hl_win_id == nil then
@@ -73,6 +74,7 @@ M.big_cursor_moved_callback = function()
             noautocmd = true,
           }, hl_win_config)
         )
+        vim.api.nvim_win_set_hl_ns(hl_win_id, vim.api.nvim_create_namespace("HereEyeAm"))
       end
 
       vim.api.nvim_set_option_value("winblend", blend, { win = hl_win_id })
@@ -92,6 +94,9 @@ end
 
 M.setup = function(opts)
   M.opts = vim.tbl_deep_extend("force", default_opts, opts or {})
+
+  local ns_id = vim.api.nvim_create_namespace("HereEyeAm")
+  vim.api.nvim_set_hl(ns_id, "NormalFloat", M.opts.highlight)
 
   local augroup = vim.api.nvim_create_augroup("HereEyeAm", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {

@@ -7,8 +7,9 @@ local default_opts = {
   min_jump = 10,
   width = 64,
   base_blend = 30,
-  interval_ms = 20,
-  total_ms = 300,
+  final_blend = 80,
+  interval_ms = 15,
+  total_ms = 350,
 }
 
 M.big_cursor_moved_callback = function()
@@ -26,11 +27,12 @@ M.big_cursor_moved_callback = function()
   end
 
   local get_width = function(width, total_ms, elapsed_ms)
-    return math.max(width - vim.fn.round(width * (elapsed_ms / total_ms)), 0)
+    return vim.fn.round(math.min(-math.log(elapsed_ms / total_ms, 10), 1) * width)
   end
 
-  local get_blend = function(blend, total_ms, elapsed_ms)
-    return math.min(blend + vim.fn.round((100 - blend) * (elapsed_ms / total_ms)), 100)
+  local get_blend = function(base_blend, final_blend, total_ms, elapsed_ms)
+    local range = final_blend - base_blend
+    return base_blend + range - vim.fn.round(math.min(-math.log(elapsed_ms / total_ms, 10), 1) * range)
   end
 
   local current_win_id = vim.api.nvim_get_current_win()
@@ -58,7 +60,7 @@ M.big_cursor_moved_callback = function()
       local should_close = elapsed_ms >= M.opts.total_ms
 
       local width = get_width(vim.fn.round(M.opts.width / 2), M.opts.total_ms, elapsed_ms)
-      local blend = get_blend(vim.fn.round(M.opts.base_blend), M.opts.total_ms, elapsed_ms)
+      local blend = get_blend(M.opts.base_blend, M.opts.final_blend, M.opts.total_ms, elapsed_ms)
       local hl_win_config = get_hl_win_config(buf_leftmost, buf_rightmost, current_win_col, current_win_row, width)
 
       if hl_win_id == nil then

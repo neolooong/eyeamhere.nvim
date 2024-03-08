@@ -11,9 +11,19 @@ local default_opts = {
   base_blend = 50,
   end_blend = 80,
   highlight = { link = "Normal" },
+  ignore_buftype = {},
+  ignore_filetype = {},
 }
 
 M.big_cursor_moved_callback = function()
+  if vim.fn.index(M.opts.ignore_buftype, vim.api.nvim_get_option_value("buftype", { buf = 0 })) ~= -1 then
+    return
+  end
+
+  if vim.fn.index(M.opts.ignore_filetype, vim.api.nvim_get_option_value("filetype", { buf = 0 })) ~= -1 then
+    return
+  end
+
   local get_hl_win_config = function(leftmost, rightmost, current_col, current_row, width)
     local hl_win_col_start = math.max(leftmost, current_col - width)
     local hl_win_col_end = math.min(rightmost, current_col + width)

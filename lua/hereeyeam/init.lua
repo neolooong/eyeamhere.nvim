@@ -1,6 +1,9 @@
 local uv = vim.uv or vim.loop
 
+local _hl_buf_id = nil
+local _hl_win_id = nil
 local _last_cur_line = nil
+local _timer = nil
 local M = {}
 
 local default_opts = {
@@ -53,18 +56,31 @@ M.big_cursor_moved_callback = function()
   local win_buf_offset = vim.fn.getwininfo(current_win_id)[1].textoff
   local buf_leftmost, buf_rightmost = win_buf_offset + 1, current_win_width
 
-  local hl_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_set_option_value("filetype", "HereEyeAm", { buf = hl_buf })
-  local timer = uv.new_timer()
+  if _hl_buf_id == nil then
+    _hl_buf_id = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_option_value("filetype", "HereEyeAm", { buf = _hl_buf_id })
+  end
+
+  -- reuse window, create new timer
   local hl_win_id
+  if _hl_win_id then
+    hl_win_id = _hl_win_id
+  end
+
+  if _timer ~= nil and uv.is_active(_timer) then
+    uv.timer_stop(_timer)
+    uv.close(_timer)
+  end
+  _timer = uv.new_timer()
+
   local elapsed_ms = 0
 
-  timer:start(
+  _timer:start(
     0,
     M.opts.interval_ms,
     vim.schedule_wrap(function()
       -- Callback might be scheduled before timer is actually closed.
-      if not uv.is_active(timer) then
+      if not uv.is_active(_timer) then
         return
       end
 
@@ -76,7 +92,7 @@ M.big_cursor_moved_callback = function()
 
       if hl_win_id == nil then
         hl_win_id = vim.api.nvim_open_win(
-          hl_buf,
+          _hl_buf_id,
           false,
           vim.tbl_deep_extend("force", {
             style = "minimal",
@@ -85,6 +101,7 @@ M.big_cursor_moved_callback = function()
           }, hl_win_config)
         )
         vim.api.nvim_win_set_hl_ns(hl_win_id, vim.api.nvim_create_namespace("HereEyeAm"))
+        _hl_win_id = hl_win_id
       end
 
       vim.api.nvim_set_option_value("winblend", blend, { win = hl_win_id })
@@ -92,8 +109,9 @@ M.big_cursor_moved_callback = function()
 
       if should_close then
         vim.api.nvim_win_close(hl_win_id, true)
-        uv.timer_stop(timer)
-        uv.close(timer)
+        _hl_win_id = nil
+        uv.timer_stop(_timer)
+        uv.close(_timer)
         return
       end
 

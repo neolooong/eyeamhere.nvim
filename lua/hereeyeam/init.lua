@@ -32,7 +32,7 @@ M.big_cursor_moved_callback = function()
     local hl_win_col_end = math.min(rightmost, current_col + width)
     local hl_win_width = hl_win_col_end - hl_win_col_start + 1
     return {
-      relative = "win",
+      relative = "editor",
       width = hl_win_width,
       height = 1,
       col = hl_win_col_start - 1,
@@ -50,12 +50,11 @@ M.big_cursor_moved_callback = function()
   end
 
   local current_win_id = vim.api.nvim_get_current_win()
-  local current_win_width = vim.api.nvim_win_get_width(current_win_id)
-  local current_win_col = vim.fn.wincol()
-  local current_win_row = vim.fn.winline()
-  local win_buf_offset = vim.fn.getwininfo(current_win_id)[1].textoff
-  local buf_leftmost, buf_rightmost = win_buf_offset + 1, current_win_width
-
+  local current_wininfo = vim.fn.getwininfo(current_win_id)[1]
+  local current_win_col = vim.fn.wincol() + current_wininfo.wincol - 1
+  local current_win_row = vim.fn.winline() + current_wininfo.winrow - 1
+  local buf_leftmost = current_wininfo.textoff + current_wininfo.wincol
+  local buf_rightmost = current_wininfo.wincol + current_wininfo.width - 1
   if _hl_buf_id == nil then
     _hl_buf_id = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_set_option_value("filetype", "HereEyeAm", { buf = _hl_buf_id })

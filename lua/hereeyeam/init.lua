@@ -9,7 +9,7 @@ local M = {}
 local default_opts = {
   enable = true,
   min_jump = 10,
-  width = 64,
+  size = 80,
   interval_ms = 15,
   total_ms = 350,
   base_blend = 50,
@@ -86,7 +86,7 @@ local big_cursor_moved_callback = function()
 
       local should_close = elapsed_ms >= M.opts.total_ms
 
-      local width = get_width(vim.fn.round(M.opts.width / 2), M.opts.total_ms, elapsed_ms)
+      local width = get_width(vim.fn.round(M.opts.size / 2), M.opts.total_ms, elapsed_ms)
       local blend = get_blend(M.opts.base_blend, M.opts.end_blend, M.opts.total_ms, elapsed_ms)
       local hl_win_config = get_hl_win_config(buf_leftmost, buf_rightmost, current_win_col, current_win_row, width)
 

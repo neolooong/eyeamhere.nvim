@@ -66,20 +66,20 @@ M.big_cursor_moved_callback = function()
     hl_win_id = _hl_win_id
   end
 
-  if _timer ~= nil and uv.is_active(_timer) then
+  if _timer ~= nil then
     uv.timer_stop(_timer)
-    uv.close(_timer)
   end
   _timer = uv.new_timer()
 
   local elapsed_ms = 0
+  local timer = _timer
 
-  _timer:start(
+  timer:start(
     0,
     M.opts.interval_ms,
     vim.schedule_wrap(function()
       -- Callback might be scheduled before timer is actually closed.
-      if not uv.is_active(_timer) then
+      if not uv.is_active(timer) then
         return
       end
 
@@ -109,8 +109,8 @@ M.big_cursor_moved_callback = function()
       if should_close then
         vim.api.nvim_win_close(hl_win_id, true)
         _hl_win_id = nil
-        uv.timer_stop(_timer)
-        uv.close(_timer)
+        uv.timer_stop(timer)
+        uv.close(timer)
         return
       end
 

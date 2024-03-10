@@ -7,6 +7,7 @@ local _timer = nil
 local M = {}
 
 local default_opts = {
+  enable = true,
   min_jump = 10,
   width = 64,
   interval_ms = 15,
@@ -18,7 +19,7 @@ local default_opts = {
   ignore_filetype = {},
 }
 
-M.big_cursor_moved_callback = function()
+local big_cursor_moved_callback = function()
   if vim.fn.index(M.opts.ignore_buftype, vim.api.nvim_get_option_value("buftype", { buf = 0 })) ~= -1 then
     return
   end
@@ -133,13 +134,49 @@ M.setup = function(opts)
       local current_cur_line = vim.fn.winline() + vim.api.nvim_win_get_position(0)[1]
       if _last_cur_line then
         local line_diff = math.abs(current_cur_line - _last_cur_line)
-        if line_diff >= M.opts.min_jump then
-          M.big_cursor_moved_callback()
+        if line_diff >= M.opts.min_jump and M.opts.enable then
+          big_cursor_moved_callback()
         end
       end
       _last_cur_line = current_cur_line
     end,
   })
+end
+
+M.toggle = function()
+  if M.opts == nil then
+    vim.notify_once("Nothing happened. Make sure setup() called before toggle().", vim.log.levels.WARN)
+    return
+  end
+
+  M.opts.enable = not M.opts.enable
+end
+
+M.enable = function()
+  if M.opts == nil then
+    vim.notify_once("Nothing happened. Make sure setup() called before enable().", vim.log.levels.WARN)
+    return
+  end
+
+  M.opts.enable = true
+end
+
+M.disable = function()
+  if M.opts == nil then
+    vim.notify_once("Nothing happened. Make sure setup() called before disable().", vim.log.levels.WARN)
+    return
+  end
+
+  M.opts.enable = false
+end
+
+M.show = function()
+  if M.opts == nil then
+    vim.notify_once("Nothing happened. Make sure setup() called before show().", vim.log.levels.WARN)
+    return
+  end
+
+  big_cursor_moved_callback()
 end
 
 return M
